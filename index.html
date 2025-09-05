@@ -130,22 +130,23 @@
 
         // Global variables for Firebase config
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            apiKey: "dummy-api-key",
-            authDomain: "dummy.firebaseapp.com",
-            projectId: "dummy-project-id",
-            storageBucket: "dummy.appspot.com",
-            messagingSenderId: "1234567890",
-            appId: "dummy-app-id",
-        };
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // Cek jika konfigurasi Firebase tersedia. Jika tidak, tampilkan pesan dan jangan lanjutkan.
+        if (typeof __firebase_config === 'undefined' || !__firebase_config) {
+            showMessage('Aplikasi tidak memiliki konfigurasi Firebase yang valid.', 'bg-red-500');
+        }
 
         // Initialize Firebase
         let app, db, auth;
+        let isFirebaseReady = false;
+
         try {
+            const firebaseConfig = JSON.parse(__firebase_config);
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
+            isFirebaseReady = true;
 
             // Perbaikan: Lakukan otentikasi anonim di awal untuk memastikan sesi pengguna selalu ada
             // sebelum operasi database dilakukan.
@@ -207,6 +208,10 @@
 
         // Sign in with custom token or anonymously
         async function signInUser(employeeId) {
+            if (!isFirebaseReady) {
+                showMessage('Aplikasi tidak terhubung ke database. Silakan coba lagi nanti.', 'bg-red-500');
+                return;
+            }
             loadingSpinner.style.display = 'flex';
             try {
                 // Perbaikan: Hanya jalankan operasi Firestore jika pengguna terotentikasi.
@@ -238,8 +243,8 @@
         
         // Function to create a new employee ID
         async function createEmployeeId(employeeId) {
-            if (!db) {
-                showMessage('Database tidak siap.', 'bg-red-500');
+            if (!isFirebaseReady) {
+                showMessage('Aplikasi tidak terhubung ke database. Silakan coba lagi nanti.', 'bg-red-500');
                 return;
             }
             loadingSpinner.style.display = 'flex';
@@ -325,8 +330,8 @@
                 showMessage('Anda belum login. Silakan login terlebih dahulu.', 'bg-red-500');
                 return;
             }
-            if (!db) {
-                showMessage('Database tidak siap.', 'bg-red-500');
+            if (!isFirebaseReady) {
+                showMessage('Aplikasi tidak terhubung ke database. Silakan coba lagi nanti.', 'bg-red-500');
                 return;
             }
             
@@ -362,8 +367,8 @@
                 showMessage('Anda belum login.', 'bg-red-500');
                 return;
             }
-            if (!db) {
-                 showMessage('Database tidak siap.', 'bg-red-500');
+            if (!isFirebaseReady) {
+                 showMessage('Aplikasi tidak terhubung ke database. Silakan coba lagi nanti.', 'bg-red-500');
                  return;
             }
             showHistoryView();
