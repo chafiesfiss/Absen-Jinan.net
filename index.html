@@ -1,45 +1,33 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Absens Tim Jinan.net</title>
-    <link rel="stylesheet" href="style.css" />
-    <!-- Skrip Google Maps API dimuat di sini. Ganti 'MASUKKAN_KUNCI_API_ANDA_DI_SINI' dengan kunci API Anda. -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=MASUKKAN_KUNCI_API_ANDA_DI_SINI&callback=initMap"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absen Karyawan Online</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="container">
-    <h2>Absens Tim Jinan.net</h2>
-    <form id="absenForm">
-        <label for="nama">Nama:</label>
-        <input type="text" id="nama" name="nama" required />
+    <div class="container">
+        <h1>Absensi Karyawan</h1>
+        <div class="card">
+            <div class="datetime">
+                <p id="time"></p>
+                <p id="date"></p>
+            </div>
+            <div id="map"></div>
+            <input type="text" id="employee-name" placeholder="Nama Karyawan">
+            <button id="absen-button">Absen Sekarang</button>
+            <p id="status-message"></p>
+        </div>
+        <div class="absen-list-container">
+            <h2>Karyawan Sudah Absen</h2>
+            <ul id="absen-list"></ul>
+        </div>
+    </div>
 
-        <label for="waktu">Waktu Absen:</label>
-        <input type="text" id="waktu" name="waktu" readonly />
-
-        <label for="latitude">Latitude:</label>
-        <input type="text" id="latitude" name="latitude" readonly />
-
-        <label for="longitude">Longitude:</label>
-        <input type="text" id="longitude" name="longitude" readonly />
-
-        <button type="button" onclick="absen()">Masuk</button>
-    </form>
-
-    <div id="status"></div>
-
-    <h3>Daftar Tim yang Sudah Absen</h3>
-    <div id="listAbsensi"></div>
-
-   
-</div>
-
-<!-- Tautkan ke file JavaScript eksternal -->
-<script src="script.js"></script>
-
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
-
-
