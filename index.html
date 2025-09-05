@@ -5,19 +5,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Absensi Karyawan + Peta</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f2f2f2; padding: 20px; }
-        .container { max-width: 700px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; margin-bottom: 20px; }
-        label { display: block; margin-top: 10px; }
-        input[type=text], input[type=button] { width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; }
-        input[type=button], button { background-color: #4CAF50; color: white; border: none; cursor: pointer; margin-top: 20px; }
-        input[type=button]:hover, button:hover { background-color: #45a049; }
-        #status { margin-top: 15px; font-weight: bold; }
-        #listAbsensi { margin-top: 30px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background-color: #eee; }
-        #map { width: 100%; height: 400px; margin-top: 20px; }
+        /* CSS untuk Responsif */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            padding: 10px; /* Padding lebih kecil untuk mobile */
+            margin: 0;
+        }
+
+        .container {
+            width: 100%;
+            margin: auto;
+            background: #fff;
+            padding: 15px;
+            border-radius: 0;
+            box-shadow: none;
+            min-height: 100vh;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input[type=text], button {
+            width: 100%;
+            padding: 12px; /* Padding lebih besar untuk area sentuh */
+            margin-top: 5px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            box-sizing: border-box; /* Agar padding tidak merusak lebar */
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-weight: bold;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        #listAbsensi {
+            margin-top: 30px;
+            overflow-x: auto; /* Penting untuk tabel */
+        }
+
+        table {
+            width: 100%;
+            min-width: 500px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px 5px;
+            text-align: left;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+
+        th {
+            background-color: #eee;
+        }
+
+        #map {
+            width: 100%;
+            height: 300px; /* Tinggi peta disesuaikan untuk mobile */
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+
+        /* Media Query untuk Desktop/Tablet */
+        @media (min-width: 600px) {
+            body {
+                padding: 20px;
+            }
+            .container {
+                max-width: 700px;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                min-height: auto;
+            }
+            table {
+                min-width: auto;
+            }
+        }
     </style>
 </head>
 <body>
@@ -37,7 +131,7 @@
         <label for="longitude">Longitude:</label>
         <input type="text" id="longitude" name="longitude" readonly />
 
-        <button type="button" id="absenButton" onclick="absen()">Absen Masuk</button>
+        <button type="button" onclick="absen()">Absen Masuk</button>
     </form>
 
     <div id="status"></div>
@@ -52,30 +146,31 @@
 <script>
     let map;
     let marker;
-    let absenData = []; // Array untuk menyimpan data absensi
+    let absenData = [];
 
-    // Inisialisasi peta saat halaman dimuat
+    // Menginisialisasi peta dan mendapatkan lokasi
     function initMap() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    const lokasiDefault = { lat: latitude, lng: longitude };
+                    const lokasi = { lat: latitude, lng: longitude };
+                    document.getElementById('latitude').value = latitude.toFixed(6);
+                    document.getElementById('longitude').value = longitude.toFixed(6);
+
                     map = new google.maps.Map(document.getElementById("map"), {
-                        center: lokasiDefault,
-                        zoom: 15, // Zoom lebih dekat agar lebih detail
+                        center: lokasi,
+                        zoom: 15,
                     });
                     marker = new google.maps.Marker({
-                        position: lokasiDefault,
+                        position: lokasi,
                         map: map,
                     });
-                    document.getElementById('latitude').value = latitude;
-                    document.getElementById('longitude').value = longitude;
                     document.getElementById('status').innerText = "Lokasi berhasil diambil. Siap untuk absen.";
                 },
                 (error) => {
                     handleGeolocationError(error);
-                    const lokasiDefault = { lat: -6.2088, lng: 106.8456 }; // Jakarta sebagai lokasi default
+                    const lokasiDefault = { lat: -6.2088, lng: 106.8456 }; // Jakarta
                     map = new google.maps.Map(document.getElementById("map"), {
                         center: lokasiDefault,
                         zoom: 8,
@@ -100,10 +195,10 @@
                 message = "Akses lokasi ditolak. Harap izinkan akses lokasi di pengaturan browser Anda.";
                 break;
             case error.POSITION_UNAVAILABLE:
-                message = "Informasi lokasi tidak tersedia. Coba lagi nanti.";
+                message = "Informasi lokasi tidak tersedia.";
                 break;
             case error.TIMEOUT:
-                message = "Permintaan lokasi habis waktu. Periksa koneksi internet Anda.";
+                message = "Permintaan lokasi habis waktu.";
                 break;
             default:
                 message = "Terjadi kesalahan yang tidak diketahui saat mengambil lokasi.";
@@ -128,41 +223,45 @@
         absenData.push(newAbsen);
         updateAbsenList();
         document.getElementById('status').innerText = `${nama} berhasil absen!`;
-        document.getElementById('nama').value = ''; // Mengosongkan nama setelah absen
+        document.getElementById('nama').value = '';
     }
 
     // Memperbarui daftar absensi
     function updateAbsenList() {
         let absenListDiv = document.getElementById('listAbsensi');
-        let tableHTML = '<table><thead><tr><th>Nama</th><th>Waktu</th><th>Latitude</th><th>Longitude</th></tr></thead><tbody>';
+        if (absenData.length === 0) {
+            absenListDiv.innerHTML = '<p>Belum ada karyawan yang absen.</p>';
+            return;
+        }
+
+        let tableHTML = '<table><thead><tr><th>Nama</th><th>Waktu</th><th>Lokasi</th></tr></thead><tbody>';
         absenData.forEach(absen => {
-            tableHTML += `<tr><td>${absen.nama}</td><td>${absen.waktu}</td><td>${absen.latitude}</td><td>${absen.longitude}</td></tr>`;
+            tableHTML += `<tr><td>${absen.nama}</td><td>${absen.waktu}</td><td>${absen.latitude}, ${absen.longitude}</td></tr>`;
         });
         tableHTML += '</tbody></table>';
         absenListDiv.innerHTML = tableHTML;
     }
 
-    // Mengisi waktu secara otomatis saat halaman dimuat
+    // Mengisi waktu secara otomatis
     function setWaktuOtomatis() {
         const now = new Date();
         const opsiWaktu = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
         document.getElementById('waktu').value = now.toLocaleDateString('id-ID', opsiWaktu);
     }
 
-    // Memastikan API Google Maps dimuat dengan benar
+    // Memuat Google Maps API
     function loadGoogleMapsScript() {
         const script = document.createElement('script');
         script.src = "https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap";
         script.async = true;
         document.head.appendChild(script);
-        console.log("Memuat Google Maps API...");
     }
 
     // Panggil fungsi inisialisasi saat dokumen siap
     document.addEventListener('DOMContentLoaded', () => {
         setWaktuOtomatis();
+        updateAbsenList(); // Tampilkan pesan kosong saat pertama kali
         loadGoogleMapsScript();
-        // Memperbarui waktu setiap detik
         setInterval(setWaktuOtomatis, 1000);
     });
 </script>
