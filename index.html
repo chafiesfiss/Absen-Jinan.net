@@ -64,6 +64,28 @@
             font-size: 0.875rem;
             text-align: center;
         }
+        #app-loading-message {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 1.25rem;
+            color: #4b5563;
+        }
+        #app-loading-message .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #3b82f6;
+            animation: spin 1s ease infinite;
+            margin-bottom: 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -72,68 +94,64 @@
         <!-- Message Box -->
         <div id="message-box" class="bg-gray-800 text-white font-medium"></div>
 
-        <!-- Login Form -->
-        <div id="login-form" class="card">
-            <h2 class="text-3xl font-bold mb-6 text-gray-800">Login Karyawan</h2>
-            <form id="login-user-form">
-                <input type="text" id="employee-id" placeholder="ID Karyawan" class="w-full p-3 mb-4 rounded-xl bg-gray-100 border-2 border-transparent focus:outline-none focus:border-blue-500 transition duration-300">
-                <div class="space-y-3">
-                    <button type="submit" id="login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Login</button>
-                    <button type="button" id="create-id-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Buat ID Karyawan</button>
-                </div>
-            </form>
+        <!-- Initial Loading Message -->
+        <div id="app-loading-message">
+            <div class="spinner"></div>
+            <p>Memuat aplikasi...</p>
         </div>
 
-        <!-- Absensi App -->
-        <div id="absensi-app" class="card">
-            <h2 class="text-2xl font-semibold mb-2 text-gray-800">Halo, <span id="user-display-id" class="text-blue-600"></span></h2>
-            <p class="text-gray-500 mb-6">Perekaman Absensi Digital</p>
+        <!-- Main Application Container (Hidden by default) -->
+        <div id="app-container" style="display: none;">
+            <!-- Login Form -->
+            <div id="login-form" class="card">
+                <h2 class="text-3xl font-bold mb-6 text-gray-800">Login Karyawan</h2>
+                <form id="login-user-form">
+                    <input type="text" id="employee-id" placeholder="ID Karyawan" class="w-full p-3 mb-4 rounded-xl bg-gray-100 border-2 border-transparent focus:outline-none focus:border-blue-500 transition duration-300">
+                    <div class="space-y-3">
+                        <button type="submit" id="login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Login</button>
+                        <button type="button" id="create-id-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Buat ID Karyawan</button>
+                    </div>
+                </form>
+            </div>
 
-            <div id="video-container" class="relative">
-                <video id="webcam-video" class="w-full max-w-sm rounded-xl aspect-video bg-gray-200" autoplay playsinline style="display:none;"></video>
-                <div id="camera-error" class="camera-error-message">
-                    Fitur kamera dinonaktifkan.
+            <!-- Absensi App -->
+            <div id="absensi-app" class="card">
+                <h2 class="text-2xl font-semibold mb-2 text-gray-800">Halo, <span id="user-display-id" class="text-blue-600"></span></h2>
+                <p class="text-gray-500 mb-6">Perekaman Absensi Digital</p>
+
+                <div id="video-container" class="relative">
+                    <video id="webcam-video" class="w-full max-w-sm rounded-xl aspect-video bg-gray-200" autoplay playsinline style="display:none;"></video>
+                    <div id="camera-error" class="camera-error-message">
+                        Fitur kamera dinonaktifkan.
+                    </div>
+                    <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-xl" style="display: none;">
+                        <div class="animate-spin rounded-full h-12 w-12 border-4 border-t-4 border-blue-500"></div>
+                    </div>
                 </div>
-                <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-xl" style="display: none;">
-                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-t-4 border-blue-500"></div>
+
+                <canvas id="photo-canvas" style="display:none;"></canvas>
+                <img id="captured-photo" alt="Foto Absensi" style="display:none;">
+
+                <div class="mt-6 space-y-3">
+                    <button id="absen-masuk-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Absen Masuk</button>
+                    <button id="absen-keluar-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Absen Keluar</button>
+                    <button id="view-history-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Lihat Riwayat</button>
+                    <button id="logout-btn" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Logout</button>
                 </div>
             </div>
 
-            <canvas id="photo-canvas" style="display:none;"></canvas>
-            <img id="captured-photo" alt="Foto Absensi" style="display:none;">
-
-            <div class="mt-6 space-y-3">
-                <button id="absen-masuk-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Absen Masuk</button>
-                <button id="absen-keluar-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Absen Keluar</button>
-                <button id="view-history-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Lihat Riwayat</button>
-                <button id="logout-btn" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Logout</button>
+            <!-- History View -->
+            <div id="history-view" class="card">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Riwayat Absensi</h2>
+                <div id="history-list" class="space-y-4 text-left">
+                    <!-- History items will be inserted here -->
+                </div>
+                <button id="back-to-app-btn" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Kembali</button>
             </div>
-        </div>
-
-        <!-- History View -->
-        <div id="history-view" class="card">
-            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Riwayat Absensi</h2>
-            <div id="history-list" class="space-y-4 text-left">
-                <!-- History items will be inserted here -->
-            </div>
-            <button id="back-to-app-btn" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Kembali</button>
         </div>
     </div>
 
     <!-- Firebase SDK -->
-    <!--
-      Masalah "halaman kosong" sering terjadi karena browser memblokir impor skrip dari domain lain
-      (misalnya, gstatic.com) saat file HTML diakses langsung atau di-host di lingkungan tertentu
-      tanpa konfigurasi yang tepat. Ini adalah masalah CORS (Cross-Origin Resource Sharing).
-
-      Untuk mengatasi ini, Anda dapat:
-      1. Gunakan server lokal (mis. `python -m http.server`) untuk menjalankan file.
-      2. Gunakan bundler (mis. Vite, Webpack) untuk menggabungkan semua skrip menjadi satu file.
-      3. Periksa konsol pengembang peramban (F12) untuk melihat pesan kesalahan CORS yang spesifik.
-
-      Di sini, kami menambahkan `try...catch` yang lebih kuat untuk memastikan aplikasi tidak hanya
-      blank, tetapi juga memberikan pesan kesalahan yang jelas kepada pengguna.
-    -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -148,13 +166,20 @@
         let app, db, auth;
         let isFirebaseReady = false;
 
+        const appContainer = document.getElementById('app-container');
+        const appLoadingMessage = document.getElementById('app-loading-message');
+
         // Perbaikan: Bungkus inisialisasi dalam try...catch untuk menangani kegagalan.
         try {
+            // Sembunyikan pesan loading dan tampilkan aplikasi setelah inisialisasi berhasil
             const firebaseConfig = JSON.parse(__firebase_config);
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
             isFirebaseReady = true;
+
+            appLoadingMessage.style.display = 'none';
+            appContainer.style.display = 'block';
 
             if (initialAuthToken) {
                 signInWithCustomToken(auth, initialAuthToken).catch(e => console.error("Error signing in with custom token:", e));
@@ -163,6 +188,9 @@
             }
 
         } catch (e) {
+            // Tampilkan pesan kesalahan yang jelas di layar
+            appLoadingMessage.style.display = 'none';
+            appContainer.style.display = 'block';
             showMessage(`Gagal menginisialisasi Firebase. Pastikan koneksi internet dan konfigurasi sudah benar.`, 'bg-red-500');
             console.error("Firebase initialization error:", e);
         }
