@@ -11,6 +11,7 @@
         :root {
             --primary-color: #4CAF50;
             --secondary-color: #2196F3;
+            --danger-color: #e74c3c;
             --background-color: #e9ecef;
             --card-background: #ffffff;
             --text-color: #333;
@@ -159,17 +160,24 @@
             margin-bottom: 10px;
             border: 1px solid var(--border-color);
             display: flex;
-            flex-direction: column;
-            align-items: flex-start;
+            justify-content: space-between;
+            align-items: center;
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
         }
 
-        #absen-list li strong {
+        #absen-list li .info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            flex-grow: 1;
+        }
+        
+        #absen-list li .info strong {
             font-size: 1.1em;
             color: var(--primary-color);
         }
 
-        #absen-list li span {
+        #absen-list li .info span {
             font-size: 0.9em;
             color: var(--muted-text-color);
         }
@@ -177,6 +185,24 @@
         .location {
             font-style: italic;
             margin-top: 5px;
+        }
+
+        #delete-button {
+            background-color: var(--danger-color);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-left: 15px;
+        }
+
+        #delete-button:hover {
+            background-color: #c0392b;
+            transform: scale(1.05);
         }
 
         #download-button {
@@ -227,7 +253,17 @@
             }
 
             #absen-list li {
+                flex-direction: column;
+                align-items: flex-start;
                 padding: 12px;
+            }
+
+            #absen-list li .info {
+                margin-bottom: 10px;
+            }
+
+            #delete-button {
+                margin-left: 0;
             }
         }
     </style>
@@ -269,7 +305,6 @@
             let employeeLocation = null;
             let absenData = [];
 
-            // Memuat data dari Local Storage saat halaman dimuat
             function loadAbsenData() {
                 const storedData = localStorage.getItem('absenData');
                 if (storedData) {
@@ -278,7 +313,6 @@
                 }
             }
 
-            // Menyimpan data ke Local Storage
             function saveAbsenData() {
                 localStorage.setItem('absenData', JSON.stringify(absenData));
             }
@@ -349,17 +383,34 @@
                 absenButton.disabled = true;
             }
 
-            function displayAbsen(name, time, date, location) {
+            // Fungsi untuk menampilkan data absensi di daftar dengan tombol hapus
+            function displayAbsen(name, time, date, location, index) {
                 const li = document.createElement('li');
                 li.innerHTML = `
-                    <div>
+                    <div class="info">
                         <strong>${name}</strong>
                         <br>
                         <span>${time}, ${date}</span>
                         <span class="location">Lat: ${location.lat.toFixed(4)}, Lon: ${location.lon.toFixed(4)}</span>
                     </div>
+                    <button id="delete-button" data-index="${index}">Hapus</button>
                 `;
                 absenList.prepend(li);
+            }
+
+            // Fungsi untuk merender ulang daftar absensi dari data yang tersimpan
+            function renderAbsenList() {
+                absenList.innerHTML = '';
+                absenData.forEach((entry, index) => {
+                    displayAbsen(entry.name, entry.time, entry.date, entry.location, index);
+                });
+            }
+
+            // Fungsi untuk menghapus item absensi
+            function deleteAbsenEntry(index) {
+                absenData.splice(index, 1);
+                saveAbsenData();
+                renderAbsenList();
             }
 
             function generateTextData() {
@@ -392,9 +443,9 @@
                         location: employeeLocation
                     };
 
-                    absenData.unshift(absenEntry); // Tambahkan ke awal array
-                    displayAbsen(absenEntry.name, absenEntry.time, absenEntry.date, absenEntry.location);
-                    saveAbsenData(); // Simpan data terbaru ke Local Storage
+                    absenData.unshift(absenEntry);
+                    saveAbsenData();
+                    renderAbsenList();
 
                     statusMessage.textContent = `Absensi atas nama ${employeeName} berhasil!`;
                     statusMessage.style.color = 'blue';
@@ -421,7 +472,14 @@
                 document.body.removeChild(link);
             });
 
-            // Panggil fungsi ini saat pertama kali halaman dimuat
+            // Menambahkan event listener untuk tombol hapus pada daftar
+            absenList.addEventListener('click', (event) => {
+                if (event.target.id === 'delete-button') {
+                    const indexToDelete = parseInt(event.target.dataset.index);
+                    deleteAbsenEntry(indexToDelete);
+                }
+            });
+
             loadAbsenData();
             getLocation();
         });
