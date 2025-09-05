@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Absensi Karyawan + Peta</title>
+    <title>Absens Tim Jinan.net</title>
     <link rel="stylesheet" href="style.css" />
     <!-- Skrip Google Maps API dimuat di sini. Ganti 'MASUKKAN_KUNCI_API_ANDA_DI_SINI' dengan kunci API Anda. -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=MASUKKAN_KUNCI_API_ANDA_DI_SINI&callback=initMap"></script>
@@ -11,9 +11,9 @@
 <body>
 
 <div class="container">
-    <h2>Form Absensi Karyawan</h2>
+    <h2>Absens Tim Jinan.net</h2>
     <form id="absenForm">
-        <label for="nama">Nama Karyawan:</label>
+        <label for="nama">Nama:</label>
         <input type="text" id="nama" name="nama" required />
 
         <label for="waktu">Waktu Absen:</label>
@@ -25,12 +25,12 @@
         <label for="longitude">Longitude:</label>
         <input type="text" id="longitude" name="longitude" readonly />
 
-        <button type="button" onclick="absen()">Absen Masuk</button>
+        <button type="button" onclick="absen()">Masuk</button>
     </form>
 
     <div id="status"></div>
 
-    <h3>Daftar Karyawan yang Sudah Absen</h3>
+    <h3>Daftar Tim yang Sudah Absen</h3>
     <div id="listAbsensi"></div>
 
     <h3>Lokasi Absen di Google Maps</h3>
@@ -43,3 +43,4 @@
 
 </body>
 </html>
+
