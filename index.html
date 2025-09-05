@@ -6,6 +6,7 @@
     <title>Absen Karyawan Online</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
+        /* CSS yang sudah diperbarui tetap sama, tidak perlu diubah */
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
 
         :root {
@@ -285,12 +286,15 @@
         <div class="absen-list-container">
             <h2>Karyawan Sudah Absen</h2>
             <ul id="absen-list"></ul>
-            <button id="download-button">Unduh Data Absen (.txt)</button>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
+        // Endpoint API yang akan Anda buat di server
+        // Ganti dengan URL backend Anda saat sudah deploy
+        const API_ENDPOINT = 'https://alamat-api-anda.com/absen'; 
+
         document.addEventListener('DOMContentLoaded', () => {
             const timeElement = document.getElementById('time');
             const dateElement = document.getElementById('date');
@@ -298,23 +302,26 @@
             const statusMessage = document.getElementById('status-message');
             const employeeNameInput = document.getElementById('employee-name');
             const absenList = document.getElementById('absen-list');
-            const downloadButton = document.getElementById('download-button');
             
             let map;
             let marker;
             let employeeLocation = null;
             let absenData = [];
 
-            function loadAbsenData() {
-                const storedData = localStorage.getItem('absenData');
-                if (storedData) {
-                    absenData = JSON.parse(storedData);
-                    absenData.forEach(entry => displayAbsen(entry.name, entry.time, entry.date, entry.location));
+            // Memuat data absensi dari server
+            async function loadAbsenData() {
+                try {
+                    const response = await fetch(API_ENDPOINT);
+                    if (!response.ok) {
+                        throw new Error(`Error: ${response.status} ${response.statusText}`);
+                    }
+                    absenData = await response.json();
+                    renderAbsenList();
+                } catch (error) {
+                    console.error("Gagal memuat data absensi:", error);
+                    statusMessage.textContent = "Gagal memuat data absensi dari server.";
+                    statusMessage.style.color = 'red';
                 }
-            }
-
-            function saveAbsenData() {
-                localStorage.setItem('absenData', JSON.stringify(absenData));
             }
 
             function updateDateTime() {
@@ -335,11 +342,9 @@
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 }).addTo(map);
-
                 marker = L.marker([lat, lon]).addTo(map)
                     .bindPopup('Lokasi Anda')
                     .openPopup();
-                
                 employeeLocation = { lat, lon };
             }
 
@@ -383,8 +388,7 @@
                 absenButton.disabled = true;
             }
 
-            // Fungsi untuk menampilkan data absensi di daftar dengan tombol hapus
-            function displayAbsen(name, time, date, location, index) {
+            function displayAbsen(name, time, date, location) {
                 const li = document.createElement('li');
                 li.innerHTML = `
                     <div class="info">
@@ -393,40 +397,16 @@
                         <span>${time}, ${date}</span>
                         <span class="location">Lat: ${location.lat.toFixed(4)}, Lon: ${location.lon.toFixed(4)}</span>
                     </div>
-                    <button id="delete-button" data-index="${index}">Hapus</button>
                 `;
                 absenList.prepend(li);
             }
 
-            // Fungsi untuk merender ulang daftar absensi dari data yang tersimpan
             function renderAbsenList() {
                 absenList.innerHTML = '';
-                absenData.forEach((entry, index) => {
-                    displayAbsen(entry.name, entry.time, entry.date, entry.location, index);
-                });
+                absenData.forEach(entry => displayAbsen(entry.name, entry.time, entry.date, entry.location));
             }
 
-            // Fungsi untuk menghapus item absensi
-            function deleteAbsenEntry(index) {
-                absenData.splice(index, 1);
-                saveAbsenData();
-                renderAbsenList();
-            }
-
-            function generateTextData() {
-                let text = "Data Absensi Karyawan\n";
-                text += "======================\n\n";
-                absenData.forEach(data => {
-                    text += `Nama: ${data.name}\n`;
-                    text += `Tanggal: ${data.date}\n`;
-                    text += `Waktu: ${data.time}\n`;
-                    text += `Lokasi: Lat: ${data.location.lat}, Lon: ${data.location.lon}\n`;
-                    text += `----------------------\n`;
-                });
-                return text;
-            }
-
-            absenButton.addEventListener('click', () => {
+            absenButton.addEventListener('click', async () => {
                 const employeeName = employeeNameInput.value.trim();
                 if (!employeeName) {
                     statusMessage.textContent = "Silakan masukkan nama Anda.";
@@ -439,47 +419,42 @@
                     const absenEntry = {
                         name: employeeName,
                         time: now.toLocaleTimeString('id-ID'),
-                        date: now.toLocaleDateString('id-ID'),
+                        date: now.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }),
                         location: employeeLocation
                     };
 
-                    absenData.unshift(absenEntry);
-                    saveAbsenData();
-                    renderAbsenList();
+                    try {
+                        const response = await fetch(API_ENDPOINT, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(absenEntry)
+                        });
 
-                    statusMessage.textContent = `Absensi atas nama ${employeeName} berhasil!`;
-                    statusMessage.style.color = 'blue';
+                        if (!response.ok) {
+                            throw new Error(`Error: ${response.status} ${response.statusText}`);
+                        }
 
-                    employeeNameInput.value = '';
+                        // Perbarui tampilan dengan data terbaru dari server
+                        loadAbsenData();
+
+                        statusMessage.textContent = `Absensi atas nama ${employeeName} berhasil!`;
+                        statusMessage.style.color = 'blue';
+
+                        employeeNameInput.value = '';
+                    } catch (error) {
+                        console.error("Gagal mengirim data absensi:", error);
+                        statusMessage.textContent = "Gagal mengirim data absensi ke server.";
+                        statusMessage.style.color = 'red';
+                    }
                 } else {
                     statusMessage.textContent = "Silakan tunggu hingga lokasi Anda ditemukan.";
                     statusMessage.style.color = 'red';
                 }
             });
 
-            downloadButton.addEventListener('click', () => {
-                const textToSave = generateTextData();
-                if (textToSave.trim() === "Data Absensi Karyawan\n======================\n\n") {
-                    alert("Tidak ada data absensi untuk diunduh.");
-                    return;
-                }
-                const blob = new Blob([textToSave], { type: 'text/plain' });
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = `data_absensi_${new Date().toISOString().slice(0, 10)}.txt`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            });
-
-            // Menambahkan event listener untuk tombol hapus pada daftar
-            absenList.addEventListener('click', (event) => {
-                if (event.target.id === 'delete-button') {
-                    const indexToDelete = parseInt(event.target.dataset.index);
-                    deleteAbsenEntry(indexToDelete);
-                }
-            });
-
+            // Muat data saat halaman pertama kali dimuat
             loadAbsenData();
             getLocation();
         });
