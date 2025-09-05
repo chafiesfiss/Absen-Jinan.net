@@ -1,11 +1,12 @@
 let map;
 let marker;
+let absenData = [];
 
 /**
  * Fungsi utama untuk inisialisasi peta dan geolokasi.
  * Dipanggil ketika dokumen sudah selesai dimuat.
  */
-function initMap() {
+function initializeMapAndGeolocation() {
     // Sembunyikan pesan "Memuat peta..." dan tampilkan peta
     document.getElementById('loading-map').style.display = 'none';
     document.getElementById('map').style.display = 'block';
@@ -84,5 +85,58 @@ function handleGeolocationError(error) {
     document.getElementById('status').innerText = `Error: ${message}`;
 }
 
-// Panggil fungsi inisialisasi peta saat dokumen sudah siap
-document.addEventListener('DOMContentLoaded', initMap);
+/**
+ * Mengambil waktu saat ini dan memperbarui nilainya setiap detik.
+ */
+function setWaktuOtomatis() {
+    const now = new Date();
+    const opsiWaktu = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    document.getElementById('waktu').value = now.toLocaleDateString('id-ID', opsiWaktu);
+}
+
+/**
+ * Fungsi utama untuk menyimpan data absensi.
+ */
+function absen() {
+    const nama = document.getElementById('nama').value;
+    const waktu = document.getElementById('waktu').value;
+    const latitude = document.getElementById('latitude').value;
+    const longitude = document.getElementById('longitude').value;
+
+    if (!nama || !waktu || !latitude || !longitude) {
+        document.getElementById('status').innerText = "Silakan isi nama dan pastikan lokasi sudah terisi.";
+        return;
+    }
+
+    const newAbsen = { nama, waktu, latitude, longitude };
+    absenData.push(newAbsen);
+    updateAbsenList();
+    document.getElementById('status').innerText = `${nama} berhasil absen!`;
+    document.getElementById('nama').value = '';
+}
+
+/**
+ * Memperbarui tampilan daftar absensi dalam bentuk tabel.
+ */
+function updateAbsenList() {
+    let absenListDiv = document.getElementById('listAbsensi');
+    if (absenData.length === 0) {
+        absenListDiv.innerHTML = '<p>Belum ada karyawan yang absen.</p>';
+        return;
+    }
+
+    let tableHTML = '<table><thead><tr><th>Nama</th><th>Waktu</th><th>Lokasi</th></tr></thead><tbody>';
+    absenData.forEach(absen => {
+        tableHTML += `<tr><td>${absen.nama}</td><td>${absen.waktu}</td><td>${absen.latitude}, ${absen.longitude}</td></tr>`;
+    });
+    tableHTML += '</tbody></table>';
+    absenListDiv.innerHTML = tableHTML;
+}
+
+// Panggil fungsi inisialisasi saat dokumen siap
+document.addEventListener('DOMContentLoaded', () => {
+    initializeMapAndGeolocation();
+    setWaktuOtomatis();
+    updateAbsenList();
+    setInterval(setWaktuOtomatis, 1000);
+});
