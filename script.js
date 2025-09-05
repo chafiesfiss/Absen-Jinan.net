@@ -2,27 +2,34 @@ let map;
 let marker;
 let absenData = [];
 
-// Fungsi utama yang dipanggil oleh Google Maps API setelah dimuat
+/**
+ * Fungsi utama yang dipanggil oleh Google Maps API setelah dimuat.
+ * Ini adalah titik awal untuk inisialisasi peta.
+ */
 function initMap() {
-    // Memeriksa apakah browser mendukung Geolocation API
+    // Sembunyikan pesan "Memuat peta..." dan tampilkan peta
+    document.getElementById('loading-map').style.display = 'none';
+    document.getElementById('map').style.display = 'block';
+
+    // Periksa apakah browser mendukung Geolocation API
     if (navigator.geolocation) {
-        // Mengambil lokasi pengguna saat ini
+        // Ambil lokasi pengguna saat ini
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
                 const lokasiSaatIni = { lat: latitude, lng: longitude };
 
-                // Mengisi input latitude dan longitude secara otomatis
+                // Isi input latitude dan longitude secara otomatis
                 document.getElementById('latitude').value = latitude.toFixed(6);
                 document.getElementById('longitude').value = longitude.toFixed(6);
 
-                // Membuat dan menampilkan peta
+                // Buat dan tampilkan peta
                 map = new google.maps.Map(document.getElementById("map"), {
                     center: lokasiSaatIni,
                     zoom: 15,
                 });
 
-                // Menambahkan marker di lokasi saat ini
+                // Tambahkan penanda (marker) di lokasi saat ini
                 marker = new google.maps.Marker({
                     position: lokasiSaatIni,
                     map: map,
@@ -31,9 +38,9 @@ function initMap() {
                 document.getElementById('status').innerText = "Lokasi berhasil diambil. Siap untuk absen.";
             },
             (error) => {
-                // Menangani kesalahan jika pengambilan lokasi gagal
+                // Tangani kesalahan jika pengambilan lokasi gagal
                 handleGeolocationError(error);
-                // Menampilkan peta dengan lokasi default jika terjadi error
+                // Tampilkan peta dengan lokasi default jika terjadi error
                 const lokasiDefault = { lat: -6.2088, lng: 106.8456 }; // Jakarta
                 map = new google.maps.Map(document.getElementById("map"), {
                     center: lokasiDefault,
@@ -45,7 +52,7 @@ function initMap() {
     } else {
         // Pesan jika browser tidak mendukung geolokasi
         document.getElementById('status').innerText = "Geolokasi tidak didukung oleh browser ini.";
-        // Menampilkan peta dengan lokasi default
+        // Tampilkan peta dengan lokasi default
         const lokasiDefault = { lat: -6.2088, lng: 106.8456 };
         map = new google.maps.Map(document.getElementById("map"), {
             center: lokasiDefault,
@@ -54,7 +61,10 @@ function initMap() {
     }
 }
 
-// Menangani berbagai jenis kesalahan geolokasi
+/**
+ * Menangani berbagai jenis kesalahan geolokasi.
+ * @param {GeolocationPositionError} error
+ */
 function handleGeolocationError(error) {
     let message;
     switch(error.code) {
@@ -74,14 +84,18 @@ function handleGeolocationError(error) {
     document.getElementById('status').innerText = `Error: ${message}`;
 }
 
-// Mengambil waktu saat ini dan memperbaruinya setiap detik
+/**
+ * Mengambil waktu saat ini dan memperbarui nilainya setiap detik.
+ */
 function setWaktuOtomatis() {
     const now = new Date();
     const opsiWaktu = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
     document.getElementById('waktu').value = now.toLocaleDateString('id-ID', opsiWaktu);
 }
 
-// Fungsi utama untuk absen
+/**
+ * Fungsi utama untuk menyimpan data absensi.
+ */
 function absen() {
     const nama = document.getElementById('nama').value;
     const waktu = document.getElementById('waktu').value;
@@ -100,7 +114,9 @@ function absen() {
     document.getElementById('nama').value = '';
 }
 
-// Memperbarui daftar absensi
+/**
+ * Memperbarui tampilan daftar absensi dalam bentuk tabel.
+ */
 function updateAbsenList() {
     let absenListDiv = document.getElementById('listAbsensi');
     if (absenData.length === 0) {
@@ -116,10 +132,12 @@ function updateAbsenList() {
     absenListDiv.innerHTML = tableHTML;
 }
 
-// Memuat skrip Google Maps API secara dinamis saat dokumen siap
+/**
+ * Memuat skrip Google Maps API secara dinamis saat dokumen siap.
+ * Penting: Masukkan Kunci API Google Maps Anda di sini.
+ */
 function loadGoogleMapsScript() {
     const script = document.createElement('script');
-    // Masukkan kunci API Google Maps Anda di sini
     script.src = "https://maps.googleapis.com/maps/api/js?key=MASUKKAN_KUNCI_API_ANDA_DI_SINI&callback=initMap";
     script.async = true;
     document.head.appendChild(script);
