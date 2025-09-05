@@ -146,6 +146,15 @@
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
+
+            // Perbaikan: Lakukan otentikasi anonim di awal untuk memastikan sesi pengguna selalu ada
+            // sebelum operasi database dilakukan.
+            if (initialAuthToken) {
+                signInWithCustomToken(auth, initialAuthToken).catch(e => console.error("Error signing in with custom token:", e));
+            } else {
+                signInAnonymously(auth).catch(e => console.error("Error signing in anonymously:", e));
+            }
+
         } catch (e) {
             showMessage(`Gagal menginisialisasi Firebase. Pastikan konfigurasi sudah benar.`, 'bg-red-500');
             console.error("Firebase initialization error:", e);
@@ -153,7 +162,6 @@
 
         let userId = null;
         let unsubscribeHistory = null;
-        let isAuthenticating = true;
 
         const loginForm = document.getElementById('login-form');
         const absensiApp = document.getElementById('absensi-app');
@@ -189,19 +197,23 @@
                 } else {
                     // This case handles when the user is signed in but has no employee ID,
                     // which can happen if they sign in anonymously without a valid ID.
-                    await auth.signOut();
                     showLoginForm();
                 }
             } else {
                 userId = null;
                 showLoginForm();
             }
-            isAuthenticating = false;
         });
 
         // Sign in with custom token or anonymously
         async function signInUser(employeeId) {
+            loadingSpinner.style.display = 'flex';
             try {
+                // Perbaikan: Hanya jalankan operasi Firestore jika pengguna terotentikasi.
+                if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
+
                 // Check if the employee ID exists in the 'employees' collection
                 const employeesRef = collection(db, `artifacts/${appId}/public/data/employees`);
                 const q = query(employeesRef, where("employeeId", "==", employeeId));
@@ -212,18 +224,15 @@
                     return;
                 }
 
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
-                }
-                
                 // Save the employeeId to local storage upon successful login
                 localStorage.setItem('employeeId', employeeId);
+                showMessage(`Login berhasil!`, 'bg-green-500');
 
             } catch (error) {
                 showMessage(`Gagal otentikasi: ${error.message}`, 'bg-red-500');
                 console.error("Authentication Error:", error);
+            } finally {
+                loadingSpinner.style.display = 'none';
             }
         }
         
@@ -233,29 +242,36 @@
                 showMessage('Database tidak siap.', 'bg-red-500');
                 return;
             }
-
-            // Check if the ID already exists
-            const employeesRef = collection(db, `artifacts/${appId}/public/data/employees`);
-            const q = query(employeesRef, where("employeeId", "==", employeeId));
-            const querySnapshot = await getDocs(q);
-
-            if (!querySnapshot.empty) {
-                showMessage('ID Karyawan ini sudah ada. Silakan gunakan ID lain.', 'bg-red-500');
-                return;
-            }
-
+            loadingSpinner.style.display = 'flex';
             try {
+                // Perbaikan: Hanya jalankan operasi Firestore jika pengguna terotentikasi.
+                if (!auth.currentUser) {
+                    await signInAnonymously(auth);
+                }
+
+                // Check if the ID already exists
+                const employeesRef = collection(db, `artifacts/${appId}/public/data/employees`);
+                const q = query(employeesRef, where("employeeId", "==", employeeId));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    showMessage('ID Karyawan ini sudah ada. Silakan gunakan ID lain.', 'bg-red-500');
+                    return;
+                }
+
                 await addDoc(employeesRef, {
                     employeeId: employeeId,
                     createdAt: Timestamp.now(),
                 });
                 showMessage(`ID Karyawan '${employeeId}' berhasil dibuat!`, 'bg-green-500');
                 
-                // --- Perubahan di sini: Panggil fungsi login setelah ID dibuat ---
+                // --- Panggil fungsi login setelah ID dibuat ---
                 signInUser(employeeId);
             } catch (e) {
-                showMessage(`Gagal membuat ID: ${e}`, 'bg-red-500');
+                showMessage(`Gagal membuat ID: ${e.message}`, 'bg-red-500');
                 console.error("Create ID error:", e);
+            } finally {
+                loadingSpinner.style.display = 'none';
             }
         }
 
@@ -333,7 +349,7 @@
                 showMessage(`Absen ${type} berhasil!`, 'bg-green-500');
 
             } catch (e) {
-                showMessage(`Gagal absen: ${e}`, 'bg-red-500');
+                showMessage(`Gagal absen: ${e.message}`, 'bg-red-500');
                 console.error("Absensi error:", e);
             } finally {
                 loadingSpinner.style.display = 'none';
