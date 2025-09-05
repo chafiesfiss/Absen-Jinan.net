@@ -1,10 +1,9 @@
 let map;
 let marker;
-let absenData = [];
 
 /**
- * Fungsi utama yang dipanggil oleh Google Maps API setelah dimuat.
- * Ini adalah titik awal untuk inisialisasi peta.
+ * Fungsi utama untuk inisialisasi peta dan geolokasi.
+ * Dipanggil ketika dokumen sudah selesai dimuat.
  */
 function initMap() {
     // Sembunyikan pesan "Memuat peta..." dan tampilkan peta
@@ -17,23 +16,22 @@ function initMap() {
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
-                const lokasiSaatIni = { lat: latitude, lng: longitude };
+                const lokasiSaatIni = [latitude, longitude];
 
                 // Isi input latitude dan longitude secara otomatis
                 document.getElementById('latitude').value = latitude.toFixed(6);
                 document.getElementById('longitude').value = longitude.toFixed(6);
 
                 // Buat dan tampilkan peta
-                map = new google.maps.Map(document.getElementById("map"), {
-                    center: lokasiSaatIni,
-                    zoom: 15,
-                });
+                map = L.map('map').setView(lokasiSaatIni, 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
 
                 // Tambahkan penanda (marker) di lokasi saat ini
-                marker = new google.maps.Marker({
-                    position: lokasiSaatIni,
-                    map: map,
-                });
+                marker = L.marker(lokasiSaatIni).addTo(map)
+                    .bindPopup("<b>Anda di sini!</b>").openPopup();
 
                 document.getElementById('status').innerText = "Lokasi berhasil diambil. Siap untuk absen.";
             },
@@ -41,11 +39,12 @@ function initMap() {
                 // Tangani kesalahan jika pengambilan lokasi gagal
                 handleGeolocationError(error);
                 // Tampilkan peta dengan lokasi default jika terjadi error
-                const lokasiDefault = { lat: -6.2088, lng: 106.8456 }; // Jakarta
-                map = new google.maps.Map(document.getElementById("map"), {
-                    center: lokasiDefault,
-                    zoom: 8,
-                });
+                const lokasiDefault = [-6.2088, 106.8456]; // Jakarta
+                map = L.map('map').setView(lokasiDefault, 8);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
                 document.getElementById('status').innerText += " Peta menampilkan lokasi default.";
             }
         );
@@ -53,11 +52,12 @@ function initMap() {
         // Pesan jika browser tidak mendukung geolokasi
         document.getElementById('status').innerText = "Geolokasi tidak didukung oleh browser ini.";
         // Tampilkan peta dengan lokasi default
-        const lokasiDefault = { lat: -6.2088, lng: 106.8456 };
-        map = new google.maps.Map(document.getElementById("map"), {
-            center: lokasiDefault,
-            zoom: 8,
-        });
+        const lokasiDefault = [-6.2088, 106.8456];
+        map = L.map('map').setView(lokasiDefault, 8);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
     }
 }
 
@@ -84,69 +84,5 @@ function handleGeolocationError(error) {
     document.getElementById('status').innerText = `Error: ${message}`;
 }
 
-/**
- * Mengambil waktu saat ini dan memperbarui nilainya setiap detik.
- */
-function setWaktuOtomatis() {
-    const now = new Date();
-    const opsiWaktu = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
-    document.getElementById('waktu').value = now.toLocaleDateString('id-ID', opsiWaktu);
-}
-
-/**
- * Fungsi utama untuk menyimpan data absensi.
- */
-function absen() {
-    const nama = document.getElementById('nama').value;
-    const waktu = document.getElementById('waktu').value;
-    const latitude = document.getElementById('latitude').value;
-    const longitude = document.getElementById('longitude').value;
-
-    if (!nama || !waktu || !latitude || !longitude) {
-        document.getElementById('status').innerText = "Silakan isi nama dan pastikan lokasi sudah terisi.";
-        return;
-    }
-
-    const newAbsen = { nama, waktu, latitude, longitude };
-    absenData.push(newAbsen);
-    updateAbsenList();
-    document.getElementById('status').innerText = `${nama} berhasil absen!`;
-    document.getElementById('nama').value = '';
-}
-
-/**
- * Memperbarui tampilan daftar absensi dalam bentuk tabel.
- */
-function updateAbsenList() {
-    let absenListDiv = document.getElementById('listAbsensi');
-    if (absenData.length === 0) {
-        absenListDiv.innerHTML = '<p>Belum ada karyawan yang absen.</p>';
-        return;
-    }
-
-    let tableHTML = '<table><thead><tr><th>Nama</th><th>Waktu</th><th>Lokasi</th></tr></thead><tbody>';
-    absenData.forEach(absen => {
-        tableHTML += `<tr><td>${absen.nama}</td><td>${absen.waktu}</td><td>${absen.latitude}, ${absen.longitude}</td></tr>`;
-    });
-    tableHTML += '</tbody></table>';
-    absenListDiv.innerHTML = tableHTML;
-}
-
-/**
- * Memuat skrip Google Maps API secara dinamis saat dokumen siap.
- * Penting: Masukkan Kunci API Google Maps Anda di sini.
- */
-function loadGoogleMapsScript() {
-    const script = document.createElement('script');
-    script.src = "https://maps.googleapis.com/maps/api/js?key=MASUKKAN_KUNCI_API_ANDA_DI_SINI&callback=initMap";
-    script.async = true;
-    document.head.appendChild(script);
-}
-
-// Panggil fungsi inisialisasi saat dokumen siap
-document.addEventListener('DOMContentLoaded', () => {
-    setWaktuOtomatis();
-    updateAbsenList();
-    loadGoogleMapsScript();
-    setInterval(setWaktuOtomatis, 1000);
-});
+// Panggil fungsi inisialisasi peta saat dokumen sudah siap
+document.addEventListener('DOMContentLoaded', initMap);
