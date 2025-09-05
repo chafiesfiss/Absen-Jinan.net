@@ -1,7 +1,8 @@
 let map;
 let marker;
+let absenData = [];
 
-// Fungsi yang dipanggil oleh Google Maps API setelah dimuat
+// Fungsi utama yang dipanggil oleh Google Maps API setelah dimuat
 function initMap() {
     // Memeriksa apakah browser mendukung Geolocation API
     if (navigator.geolocation) {
@@ -11,14 +12,14 @@ function initMap() {
                 const { latitude, longitude } = position.coords;
                 const lokasiSaatIni = { lat: latitude, lng: longitude };
 
-                // Mengisi input latitude dan longitude
+                // Mengisi input latitude dan longitude secara otomatis
                 document.getElementById('latitude').value = latitude.toFixed(6);
                 document.getElementById('longitude').value = longitude.toFixed(6);
 
                 // Membuat dan menampilkan peta
                 map = new google.maps.Map(document.getElementById("map"), {
                     center: lokasiSaatIni,
-                    zoom: 15, // Zoom level yang lebih detail
+                    zoom: 15,
                 });
 
                 // Menambahkan marker di lokasi saat ini
@@ -27,7 +28,7 @@ function initMap() {
                     map: map,
                 });
 
-                document.getElementById('status').innerText = "Lokasi berhasil diambil.";
+                document.getElementById('status').innerText = "Lokasi berhasil diambil. Siap untuk absen.";
             },
             (error) => {
                 // Menangani kesalahan jika pengambilan lokasi gagal
@@ -73,13 +74,61 @@ function handleGeolocationError(error) {
     document.getElementById('status').innerText = `Error: ${message}`;
 }
 
-// Memuat skrip Google Maps API secara dinamis
+// Mengambil waktu saat ini dan memperbaruinya setiap detik
+function setWaktuOtomatis() {
+    const now = new Date();
+    const opsiWaktu = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    document.getElementById('waktu').value = now.toLocaleDateString('id-ID', opsiWaktu);
+}
+
+// Fungsi utama untuk absen
+function absen() {
+    const nama = document.getElementById('nama').value;
+    const waktu = document.getElementById('waktu').value;
+    const latitude = document.getElementById('latitude').value;
+    const longitude = document.getElementById('longitude').value;
+
+    if (!nama || !waktu || !latitude || !longitude) {
+        document.getElementById('status').innerText = "Silakan isi nama dan pastikan lokasi sudah terisi.";
+        return;
+    }
+
+    const newAbsen = { nama, waktu, latitude, longitude };
+    absenData.push(newAbsen);
+    updateAbsenList();
+    document.getElementById('status').innerText = `${nama} berhasil absen!`;
+    document.getElementById('nama').value = '';
+}
+
+// Memperbarui daftar absensi
+function updateAbsenList() {
+    let absenListDiv = document.getElementById('listAbsensi');
+    if (absenData.length === 0) {
+        absenListDiv.innerHTML = '<p>Belum ada karyawan yang absen.</p>';
+        return;
+    }
+
+    let tableHTML = '<table><thead><tr><th>Nama</th><th>Waktu</th><th>Lokasi</th></tr></thead><tbody>';
+    absenData.forEach(absen => {
+        tableHTML += `<tr><td>${absen.nama}</td><td>${absen.waktu}</td><td>${absen.latitude}, ${absen.longitude}</td></tr>`;
+    });
+    tableHTML += '</tbody></table>';
+    absenListDiv.innerHTML = tableHTML;
+}
+
+// Memuat skrip Google Maps API secara dinamis saat dokumen siap
 function loadGoogleMapsScript() {
     const script = document.createElement('script');
-    script.src = "https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap";
+    // Masukkan kunci API Google Maps Anda di sini
+    script.src = "https://maps.googleapis.com/maps/api/js?key=MASUKKAN_KUNCI_API_ANDA_DI_SINI&callback=initMap";
     script.async = true;
     document.head.appendChild(script);
 }
 
-// Memuat skrip saat dokumen selesai dimuat
-document.addEventListener('DOMContentLoaded', loadGoogleMapsScript);
+// Panggil fungsi inisialisasi saat dokumen siap
+document.addEventListener('DOMContentLoaded', () => {
+    setWaktuOtomatis();
+    updateAbsenList();
+    loadGoogleMapsScript();
+    setInterval(setWaktuOtomatis, 1000);
+});
