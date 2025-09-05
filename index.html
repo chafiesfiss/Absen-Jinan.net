@@ -250,6 +250,9 @@
                     createdAt: Timestamp.now(),
                 });
                 showMessage(`ID Karyawan '${employeeId}' berhasil dibuat!`, 'bg-green-500');
+                
+                // --- Perubahan di sini: Panggil fungsi login setelah ID dibuat ---
+                signInUser(employeeId);
             } catch (e) {
                 showMessage(`Gagal membuat ID: ${e}`, 'bg-red-500');
                 console.error("Create ID error:", e);
@@ -423,17 +426,6 @@
              showMessage('Anda telah logout.', 'bg-blue-500');
         });
         
-        // Initial setup
-        if (!isAuthenticating) {
-             onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    showAbsensiApp();
-                } else {
-                    showLoginForm();
-                }
-             });
-        }
-
         // --- LOAD ID KARYAWAN DARI LOCAL STORAGE ---
         // Cek jika ada ID karyawan yang tersimpan di browser
         const savedEmployeeId = localStorage.getItem('employeeId');
@@ -441,6 +433,9 @@
             // Jika ada, isikan ID tersebut ke dalam input field
             employeeIdInput.value = savedEmployeeId;
         }
+
+        // Tampilkan formulir login secara default untuk mencegah layar kosong saat memuat
+        loginForm.style.display = 'block';
 
     </script>
 </body>
