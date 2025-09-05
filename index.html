@@ -6,13 +6,17 @@
 <title>Absensi Karyawan</title>
 <style>
     body { font-family: Arial, sans-serif; background-color: #f2f2f2; padding: 20px; }
-    .container { max-width: 500px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
     h2 { text-align: center; margin-bottom: 20px; }
     label { display: block; margin-top: 10px; }
     input[type=text], input[type=button] { width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; }
     input[type=button] { background-color: #4CAF50; color: white; border: none; cursor: pointer; margin-top: 20px; }
     input[type=button]:hover { background-color: #45a049; }
     #status { margin-top: 15px; font-weight: bold; }
+    #listAbsensi { margin-top: 30px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #eee; }
 </style>
 </head>
 <body>
@@ -35,14 +39,17 @@
         <input type="button" value="Absen Masuk" onclick="absen()" />
     </form>
     <div id="status"></div>
+
+    <h3>Daftar Karyawan yang Sudah Absen</h3>
+    <div id="listAbsensi"></div>
 </div>
 
 <script>
 function getWaktu() {
     const now = new Date();
     const hari = now.toLocaleDateString('id-ID');
-    const waktu = now.toLocaleTimeString('id-ID');
-    document.getElementById('waktu').value = hari + ' ' + waktu;
+    const waktuStr = now.toLocaleTimeString('id-ID');
+    document.getElementById('waktu').value = hari + ' ' + waktuStr;
 }
 
 function getLocation() {
@@ -76,25 +83,9 @@ function showError(error) {
     }
 }
 
-function absen() {
-    getWaktu();
-    getLocation();
-    // Setelah waktu dan lokasi diambil, data bisa dikirim ke server menggunakan AJAX
-    setTimeout(() => {
-        const nama = document.getElementById('nama').value;
-        const waktu = document.getElementById('waktu').value;
-        const latitude = document.getElementById('latitude').value;
-        const longitude = document.getElementById('longitude').value;
-        alert(`Absensi berhasil!\nNama: ${nama}\nWaktu: ${waktu}\nLat: ${latitude}\nLng: ${longitude}`);
-        // Tambahkan kode AJAX di sini jika ingin mengirim ke database
-    }, 1000); // tunggu sebentar agar posisi dan waktu terupdate
-}
+function loadAbsensi() {
+    const data = localStorage.getItem('absensi');
 
-// Inisialisasi otomatis waktu saat halaman dimuat
-window.onload = () => {
-    getWaktu();
-};
-</script>
-
-</body>
-</html>
+    let html = '<table><tr><th>Nama</th><th>Waktu</th><th>Lat</th><th>Lng</th></tr>';
+    if (data) {
+        const list =
