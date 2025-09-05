@@ -77,7 +77,10 @@
             <h2 class="text-3xl font-bold mb-6 text-gray-800">Login Karyawan</h2>
             <form id="login-user-form">
                 <input type="text" id="employee-id" placeholder="ID Karyawan" class="w-full p-3 mb-4 rounded-xl bg-gray-100 border-2 border-transparent focus:outline-none focus:border-blue-500 transition duration-300">
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Login</button>
+                <div class="space-y-3">
+                    <button type="submit" id="login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Login</button>
+                    <button type="button" id="create-id-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Buat ID Karyawan</button>
+                </div>
             </form>
         </div>
 
@@ -121,7 +124,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, Timestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         setLogLevel('debug');
 
@@ -170,13 +173,25 @@
         const loadingSpinner = document.getElementById('loading-spinner');
         const photoCanvas = document.getElementById('photo-canvas');
         const cameraErrorDiv = document.getElementById('camera-error');
+        const createIdBtn = document.getElementById('create-id-btn');
+        const loginBtn = document.getElementById('login-btn');
+
 
         // --- AUTHENTICATION ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                userId = user.uid;
-                userDisplayId.textContent = userId;
-                showAbsensiApp();
+                // Get the employee ID from local storage
+                const savedEmployeeId = localStorage.getItem('employeeId');
+                if (savedEmployeeId) {
+                    userId = savedEmployeeId;
+                    userDisplayId.textContent = userId;
+                    showAbsensiApp();
+                } else {
+                    // This case handles when the user is signed in but has no employee ID,
+                    // which can happen if they sign in anonymously without a valid ID.
+                    await auth.signOut();
+                    showLoginForm();
+                }
             } else {
                 userId = null;
                 showLoginForm();
@@ -185,16 +200,59 @@
         });
 
         // Sign in with custom token or anonymously
-        async function signInUser() {
+        async function signInUser(employeeId) {
             try {
+                // Check if the employee ID exists in the 'employees' collection
+                const employeesRef = collection(db, `artifacts/${appId}/public/data/employees`);
+                const q = query(employeesRef, where("employeeId", "==", employeeId));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    showMessage('ID Karyawan tidak ditemukan. Silakan buat ID baru atau periksa kembali.', 'bg-red-500');
+                    return;
+                }
+
                 if (initialAuthToken) {
                     await signInWithCustomToken(auth, initialAuthToken);
                 } else {
                     await signInAnonymously(auth);
                 }
+                
+                // Save the employeeId to local storage upon successful login
+                localStorage.setItem('employeeId', employeeId);
+
             } catch (error) {
                 showMessage(`Gagal otentikasi: ${error.message}`, 'bg-red-500');
                 console.error("Authentication Error:", error);
+            }
+        }
+        
+        // Function to create a new employee ID
+        async function createEmployeeId(employeeId) {
+            if (!db) {
+                showMessage('Database tidak siap.', 'bg-red-500');
+                return;
+            }
+
+            // Check if the ID already exists
+            const employeesRef = collection(db, `artifacts/${appId}/public/data/employees`);
+            const q = query(employeesRef, where("employeeId", "==", employeeId));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                showMessage('ID Karyawan ini sudah ada. Silakan gunakan ID lain.', 'bg-red-500');
+                return;
+            }
+
+            try {
+                await addDoc(employeesRef, {
+                    employeeId: employeeId,
+                    createdAt: Timestamp.now(),
+                });
+                showMessage(`ID Karyawan '${employeeId}' berhasil dibuat!`, 'bg-green-500');
+            } catch (e) {
+                showMessage(`Gagal membuat ID: ${e}`, 'bg-red-500');
+                console.error("Create ID error:", e);
             }
         }
 
@@ -212,14 +270,12 @@
             loginForm.style.display = 'block';
             absensiApp.style.display = 'none';
             historyView.style.display = 'none';
-            // No need to stop webcam
         }
 
         function showAbsensiApp() {
             loginForm.style.display = 'none';
             absensiApp.style.display = 'flex';
             historyView.style.display = 'none';
-            // Tampilkan container video untuk pesan
             videoContainer.style.display = 'flex';
             webcamVideo.style.display = 'none';
             capturedPhoto.style.display = 'none';
@@ -261,7 +317,7 @@
                 const location = await getGeolocation();
 
                 const attendanceData = {
-                    userId: userId,
+                    employeeId: userId, // Use the stored employee ID
                     timestamp: Timestamp.now(),
                     type: type, // 'masuk' or 'keluar'
                     location: {
@@ -270,7 +326,7 @@
                     },
                 };
 
-                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/absensi`), attendanceData);
+                await addDoc(collection(db, `artifacts/${appId}/public/data/absensi`), attendanceData);
                 showMessage(`Absen ${type} berhasil!`, 'bg-green-500');
 
             } catch (e) {
@@ -299,7 +355,8 @@
                 unsubscribeHistory();
             }
 
-            const q = query(collection(db, `artifacts/${appId}/users/${userId}/absensi`));
+            // Query history for the specific employee ID
+            const q = query(collection(db, `artifacts/${appId}/public/data/absensi`), where("employeeId", "==", userId));
             
             unsubscribeHistory = onSnapshot(q, (querySnapshot) => {
                 historyList.innerHTML = '';
@@ -328,13 +385,21 @@
         }
         
         // --- EVENT LISTENERS ---
-        loginForm.addEventListener('submit', (e) => {
+        loginBtn.addEventListener('click', (e) => {
             e.preventDefault();
             const employeeId = employeeIdInput.value.trim();
             if (employeeId) {
-                // Simpan ID karyawan ke penyimpanan lokal
-                localStorage.setItem('employeeId', employeeId);
-                signInUser();
+                signInUser(employeeId);
+            } else {
+                showMessage('ID Karyawan tidak boleh kosong.', 'bg-red-500');
+            }
+        });
+
+        createIdBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const employeeId = employeeIdInput.value.trim();
+            if (employeeId) {
+                createEmployeeId(employeeId);
             } else {
                 showMessage('ID Karyawan tidak boleh kosong.', 'bg-red-500');
             }
@@ -380,4 +445,3 @@
     </script>
 </body>
 </html>
-
