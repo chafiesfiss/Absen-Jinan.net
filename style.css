@@ -1,207 +1,207 @@
-/*
- * Gaya umum untuk seluruh body halaman.
- */
+/* Import font dari Google Fonts untuk tampilan yang lebih modern */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+:root {
+    --primary-color: #4CAF50;
+    --secondary-color: #2196F3;
+    --background-color: #e9ecef;
+    --card-background: #ffffff;
+    --text-color: #333;
+    --muted-text-color: #6c757d;
+    --border-color: #dee2e6;
+    --box-shadow-light: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
 body {
-    font-family: 'Inter', sans-serif;
-    background-color: #f3f4f6;
-    margin: 0;
-    padding: 20px;
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--background-color);
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     min-height: 100vh;
+    margin: 0;
+    color: var(--text-color);
+    line-height: 1.6;
 }
 
-/*
- * Gaya untuk container utama yang menampung form dan peta.
- */
 .container {
-    background-color: #ffffff;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    max-width: 600px;
-    width: 100%;
-    margin-bottom: 20px;
+    width: 95%;
+    max-width: 550px;
+    padding: 20px;
+    background-color: var(--card-background);
+    border-radius: 16px;
+    box-shadow: var(--box-shadow-light);
+    text-align: center;
+    animation: fadeIn 0.8s ease-in-out;
 }
 
-/*
- * Gaya untuk judul.
- */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 h1 {
-    font-size: 24px;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+    font-size: 1.8em;
     font-weight: 700;
-    color: #1f2937;
-    text-align: center;
-    margin-bottom: 20px;
 }
 
-/*
- * Gaya untuk form dan elemen input.
- */
-.form-group {
+.card {
+    padding: 25px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
     margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-label {
-    display: block;
+.datetime {
+    margin-bottom: 25px;
+    font-size: 1.1em;
     font-weight: 600;
-    color: #4b5563;
-    margin-bottom: 8px;
+    color: var(--muted-text-color);
 }
 
-input[type="text"] {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    box-sizing: border-box;
-    font-size: 16px;
-    color: #1f2937;
-    background-color: #f9fafb;
+.datetime p {
+    margin: 5px 0;
 }
 
-/*
- * Gaya untuk peta.
- */
 #map {
-    height: 400px;
+    height: 280px;
     width: 100%;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    display: none; /* Disembunyikan sampai peta siap */
+    border: 2px solid var(--border-color);
 }
 
-/*
- * Gaya untuk loading state dan pesan status.
- */
-#loading-map, #status {
-    text-align: center;
-    color: #6b7280;
-    font-style: italic;
-    margin-bottom: 20px;
-}
-
-/*
- * Gaya untuk tombol.
- */
-.button {
+#employee-name {
     width: 100%;
     padding: 12px;
-    background-color: #2563eb;
-    color: #ffffff;
-    font-size: 16px;
-    font-weight: 700;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-sizing: border-box;
+    font-size: 1em;
+    transition: border-color 0.3s ease;
+}
+
+#employee-name:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+#absen-button {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #fff;
+    background-color: var(--primary-color);
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-.button:hover {
-    background-color: #1e40af;
+#absen-button:hover {
+    background-color: #43a047;
+    transform: translateY(-2px);
 }
 
-/*
- * Gaya untuk tabel absensi.
- */
-#listAbsensi {
-    margin-top: 30px;
+#absen-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
+#status-message {
     margin-top: 15px;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-weight: 600;
 }
 
-th, td {
-    padding: 12px 15px;
+/* Bagian Daftar Absen */
+.absen-list-container {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: var(--background-color);
+    border-radius: 12px;
     text-align: left;
-    border-bottom: 1px solid #e5e7eb;
 }
 
-th {
-    background-color: #e5e7eb;
-    color: #374151;
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 14px;
+.absen-list-container h2 {
+    text-align: center;
+    color: var(--text-color);
+    margin-bottom: 15px;
+    font-size: 1.5em;
 }
 
-tr:last-child td {
-    border-bottom: none;
+#absen-list {
+    list-style-type: none;
+    padding: 0;
 }
 
-/*
- * Media queries untuk tampilan mobile.
- */
-@media (max-width: 768px) {
-    body {
-        padding: 10px;
-        align-items: center;
-    }
+#absen-list li {
+    background-color: var(--card-background);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
 
+#absen-list li strong {
+    font-size: 1.1em;
+    color: var(--primary-color);
+}
+
+#absen-list li span {
+    font-size: 0.9em;
+    color: var(--muted-text-color);
+}
+
+.location {
+    font-style: italic;
+    margin-top: 5px;
+}
+
+/* Responsif untuk Handphone */
+@media (max-width: 600px) {
     .container {
-        padding: 20px;
-        border-radius: 8px;
+        padding: 15px;
     }
 
     h1 {
-        font-size: 20px;
+        font-size: 1.5em;
     }
 
-    .form-group {
-        margin-bottom: 15px;
+    .card {
+        padding: 20px;
     }
 
-    .button {
-        padding: 10px;
+    #map {
+        height: 200px;
     }
 
-    #listAbsensi table,
-    #listAbsensi thead,
-    #listAbsensi tbody,
-    #listAbsensi th,
-    #listAbsensi td,
-    #listAbsensi tr {
-        display: block;
+    #absen-button,
+    #employee-name {
+        font-size: 1em;
+        padding: 12px;
     }
 
-    #listAbsensi thead tr {
-        position: absolute;
-        top: -9999px;
-        left: -9999px;
+    .absen-list-container h2 {
+        font-size: 1.3em;
     }
 
-    #listAbsensi tr {
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        margin-bottom: 15px;
+    #absen-list li {
+        padding: 12px;
     }
-
-    #listAbsensi td {
-        border-bottom: 1px solid #e5e7eb;
-        position: relative;
-        padding-left: 50%;
-        text-align: right;
-    }
-
-    #listAbsensi td::before {
-        content: attr(data-label);
-        position: absolute;
-        left: 0;
-        width: 50%;
-        padding-left: 15px;
-        font-weight: bold;
-        text-align: left;
-    }
-
-    #listAbsensi td:nth-of-type(1)::before { content: "Nama"; }
-    #listAbsensi td:nth-of-type(2)::before { content: "Waktu"; }
-    #listAbsensi td:nth-of-type(3)::before { content: "Lokasi"; }
 }
