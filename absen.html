@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Absensi Karyawan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .container {
+            max-width: 420px;
+            margin: auto;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .card {
+            background-color: white;
+            padding: 2.5rem 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            text-align: center;
+        }
+        #video-container {
+            margin-top: 1.5rem;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        #captured-photo {
+            width: 100%;
+            max-width: 250px;
+            border-radius: 0.75rem;
+            margin-top: 1rem;
+            display: none;
+        }
+        #message-box {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 100;
+        }
+        #login-form, #absensi-app, #history-view {
+            display: none;
+        }
+        .camera-error-message {
+            padding: 1rem;
+            background-color: #d1d5db;
+            color: #4b5563;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Message Box -->
+        <div id="message-box" class="bg-gray-800 text-white font-medium"></div>
+
+        <!-- Login Form -->
+        <div id="login-form" class="card">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">Login Karyawan</h2>
+            <form id="login-user-form">
+                <input type="text" id="employee-id" placeholder="ID Karyawan" class="w-full p-3 mb-4 rounded-xl bg-gray-100 border-2 border-transparent focus:outline-none focus:border-blue-500 transition duration-300">
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Login</button>
+            </form>
+        </div>
+
+        <!-- Absensi App -->
+        <div id="absensi-app" class="card">
+            <h2 class="text-2xl font-semibold mb-2 text-gray-800">Halo, <span id="user-display-id" class="text-blue-600"></span></h2>
+            <p class="text-gray-500 mb-6">Perekaman Absensi Digital</p>
+
+            <div id="video-container" class="relative">
+                <video id="webcam-video" class="w-full max-w-sm rounded-xl aspect-video bg-gray-200" autoplay playsinline style="display:none;"></video>
+                <div id="camera-error" class="camera-error-message">
+                    Fitur kamera dinonaktifkan.
+                </div>
+                <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-xl" style="display: none;">
+                    <div class="animate-spin rounded-full h-12 w-12 border-4 border-t-4 border-blue-500"></div>
+                </div>
+            </div>
+
+            <canvas id="photo-canvas" style="display:none;"></canvas>
+            <img id="captured-photo" alt="Foto Absensi" style="display:none;">
+
+            <div class="mt-6 space-y-3">
+                <button id="absen-masuk-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Absen Masuk</button>
+                <button id="absen-keluar-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Absen Keluar</button>
+                <button id="view-history-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Lihat Riwayat</button>
+                <button id="logout-btn" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Logout</button>
+            </div>
+        </div>
+
+        <!-- History View -->
+        <div id="history-view" class="card">
+            <h2 class="text-2xl font-semibold mb-4 text-gray-800">Riwayat Absensi</h2>
+            <div id="history-list" class="space-y-4 text-left">
+                <!-- History items will be inserted here -->
+            </div>
+            <button id="back-to-app-btn" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl transition duration-300 transform hover:scale-105">Kembali</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        setLogLevel('debug');
+
+        // Global variables for Firebase config
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "dummy-api-key",
+            authDomain: "dummy.firebaseapp.com",
+            projectId: "dummy-project-id",
+            storageBucket: "dummy.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "dummy-app-id",
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        let app, db, auth;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        } catch (e) {
+            showMessage(`Gagal menginisialisasi Firebase. Pastikan konfigurasi sudah benar.`, 'bg-red-500');
+            console.error("Firebase initialization error:", e);
+        }
+
+        let userId = null;
+        let unsubscribeHistory = null;
+        let isAuthenticating = true;
+
+        const loginForm = document.getElementById('login-form');
+        const absensiApp = document.getElementById('absensi-app');
+        const historyView = document.getElementById('history-view');
+        const employeeIdInput = document.getElementById('employee-id');
+        const userDisplayId = document.getElementById('user-display-id');
+        const videoContainer = document.getElementById('video-container');
+        const webcamVideo = document.getElementById('webcam-video');
+        const capturedPhoto = document.getElementById('captured-photo');
+        const absenMasukBtn = document.getElementById('absen-masuk-btn');
+        const absenKeluarBtn = document.getElementById('absen-keluar-btn');
+        const viewHistoryBtn = document.getElementById('view-history-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const backToAppBtn = document.getElementById('back-to-app-btn');
+        const historyList = document.getElementById('history-list');
+        const messageBox = document.getElementById('message-box');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const photoCanvas = document.getElementById('photo-canvas');
+        const cameraErrorDiv = document.getElementById('camera-error');
+
+        // --- AUTHENTICATION ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                userDisplayId.textContent = userId;
+                showAbsensiApp();
+            } else {
+                userId = null;
+                showLoginForm();
+            }
+            isAuthenticating = false;
+        });
+
+        // Sign in with custom token or anonymously
+        async function signInUser() {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                showMessage(`Gagal otentikasi: ${error.message}`, 'bg-red-500');
+                console.error("Authentication Error:", error);
+            }
+        }
+
+        // --- UI STATE MANAGEMENT ---
+        function showMessage(message, type) {
+            messageBox.textContent = message;
+            messageBox.className = `p-3 text-center rounded-xl font-medium shadow-lg transition-all duration-300 ${type}`;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 3000);
+        }
+
+        function showLoginForm() {
+            loginForm.style.display = 'block';
+            absensiApp.style.display = 'none';
+            historyView.style.display = 'none';
+            // No need to stop webcam
+        }
+
+        function showAbsensiApp() {
+            loginForm.style.display = 'none';
+            absensiApp.style.display = 'flex';
+            historyView.style.display = 'none';
+            // Tampilkan container video untuk pesan
+            videoContainer.style.display = 'flex';
+            webcamVideo.style.display = 'none';
+            capturedPhoto.style.display = 'none';
+        }
+
+        function showHistoryView() {
+            loginForm.style.display = 'none';
+            absensiApp.style.display = 'none';
+            historyView.style.display = 'block';
+        }
+
+        // --- GEOLOCATION ONLY ---
+        function getGeolocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject('Geolocation tidak didukung oleh browser Anda.');
+                }
+                navigator.geolocation.getCurrentPosition(
+                    (position) => resolve(position),
+                    (error) => reject(`Gagal mendapatkan lokasi: ${error.message}`)
+                );
+            });
+        }
+        
+        // --- ABSENSI LOGIC ---
+        async function recordAttendance(type) {
+            if (!userId) {
+                showMessage('Anda belum login. Silakan login terlebih dahulu.', 'bg-red-500');
+                return;
+            }
+            if (!db) {
+                showMessage('Database tidak siap.', 'bg-red-500');
+                return;
+            }
+            
+            loadingSpinner.style.display = 'flex';
+            
+            try {
+                const location = await getGeolocation();
+
+                const attendanceData = {
+                    userId: userId,
+                    timestamp: Timestamp.now(),
+                    type: type, // 'masuk' or 'keluar'
+                    location: {
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                    },
+                };
+
+                await addDoc(collection(db, `artifacts/${appId}/users/${userId}/absensi`), attendanceData);
+                showMessage(`Absen ${type} berhasil!`, 'bg-green-500');
+
+            } catch (e) {
+                showMessage(`Gagal absen: ${e}`, 'bg-red-500');
+                console.error("Absensi error:", e);
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+
+        // --- HISTORY LOGIC ---
+        function getHistory() {
+            if (!userId) {
+                showMessage('Anda belum login.', 'bg-red-500');
+                return;
+            }
+            if (!db) {
+                 showMessage('Database tidak siap.', 'bg-red-500');
+                 return;
+            }
+            showHistoryView();
+            historyList.innerHTML = ''; // Clear previous data
+
+            // Unsubscribe from previous listener if it exists
+            if (unsubscribeHistory) {
+                unsubscribeHistory();
+            }
+
+            const q = query(collection(db, `artifacts/${appId}/users/${userId}/absensi`));
+            
+            unsubscribeHistory = onSnapshot(q, (querySnapshot) => {
+                historyList.innerHTML = '';
+                const historyItems = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const date = data.timestamp.toDate().toLocaleString('id-ID');
+                    historyItems.push(`
+                        <div class="p-4 bg-gray-100 rounded-xl shadow-sm">
+                            <p class="font-semibold text-gray-800">Tipe: <span class="text-blue-600">${data.type}</span></p>
+                            <p class="text-gray-600">Waktu: ${date}</p>
+                            <p class="text-gray-600 truncate">Lokasi: Lat ${data.location.latitude.toFixed(4)}, Lon ${data.location.longitude.toFixed(4)}</p>
+                        </div>
+                    `);
+                });
+                if (historyItems.length > 0) {
+                     historyItems.reverse(); // Show newest first
+                     historyList.innerHTML = historyItems.join('');
+                } else {
+                     historyList.innerHTML = '<p class="text-center text-gray-500">Belum ada riwayat absensi.</p>';
+                }
+            }, (error) => {
+                showMessage(`Gagal memuat riwayat: ${error.message}`, 'bg-red-500');
+                console.error("Firestore history error:", error);
+            });
+        }
+        
+        // --- EVENT LISTENERS ---
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const employeeId = employeeIdInput.value.trim();
+            if (employeeId) {
+                // Simpan ID karyawan ke penyimpanan lokal
+                localStorage.setItem('employeeId', employeeId);
+                signInUser();
+            } else {
+                showMessage('ID Karyawan tidak boleh kosong.', 'bg-red-500');
+            }
+        });
+
+        absenMasukBtn.addEventListener('click', () => recordAttendance('masuk'));
+        absenKeluarBtn.addEventListener('click', () => recordAttendance('keluar'));
+        viewHistoryBtn.addEventListener('click', getHistory);
+        backToAppBtn.addEventListener('click', showAbsensiApp);
+        
+        logoutBtn.addEventListener('click', async () => {
+             // Hapus ID karyawan dari penyimpanan lokal saat logout
+             localStorage.removeItem('employeeId');
+             // Unsubscribe from history listener if active
+             if (unsubscribeHistory) {
+                unsubscribeHistory();
+                unsubscribeHistory = null;
+             }
+             await auth.signOut();
+             showLoginForm();
+             showMessage('Anda telah logout.', 'bg-blue-500');
+        });
+        
+        // Initial setup
+        if (!isAuthenticating) {
+             onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    showAbsensiApp();
+                } else {
+                    showLoginForm();
+                }
+             });
+        }
+
+        // --- LOAD ID KARYAWAN DARI LOCAL STORAGE ---
+        // Cek jika ada ID karyawan yang tersimpan di browser
+        const savedEmployeeId = localStorage.getItem('employeeId');
+        if (savedEmployeeId) {
+            // Jika ada, isikan ID tersebut ke dalam input field
+            employeeIdInput.value = savedEmployeeId;
+        }
+
+    </script>
+</body>
+</html>
