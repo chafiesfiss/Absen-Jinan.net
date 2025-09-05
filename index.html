@@ -5,7 +5,232 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Absen Karyawan Online</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <link rel="stylesheet" href="style.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --background-color: #e9ecef;
+            --card-background: #ffffff;
+            --text-color: #333;
+            --muted-text-color: #6c757d;
+            --border-color: #dee2e6;
+            --box-shadow-light: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 550px;
+            padding: 20px;
+            background-color: var(--card-background);
+            border-radius: 16px;
+            box-shadow: var(--box-shadow-light);
+            text-align: center;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .card {
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .datetime {
+            margin-bottom: 25px;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--muted-text-color);
+        }
+
+        .datetime p {
+            margin: 5px 0;
+        }
+
+        #map {
+            height: 280px;
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 2px solid var(--border-color);
+        }
+
+        #employee-name {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        #employee-name:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        #absen-button {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #fff;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        #absen-button:hover {
+            background-color: #43a047;
+            transform: translateY(-2px);
+        }
+
+        #absen-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #status-message {
+            margin-top: 15px;
+            font-weight: 600;
+        }
+
+        .absen-list-container {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: var(--background-color);
+            border-radius: 12px;
+            text-align: left;
+        }
+
+        .absen-list-container h2 {
+            text-align: center;
+            color: var(--text-color);
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        #absen-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #absen-list li {
+            background-color: var(--card-background);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        #absen-list li strong {
+            font-size: 1.1em;
+            color: var(--primary-color);
+        }
+
+        #absen-list li span {
+            font-size: 0.9em;
+            color: var(--muted-text-color);
+        }
+
+        .location {
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        #download-button {
+            width: 100%;
+            padding: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            color: #fff;
+            background-color: var(--secondary-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 20px;
+        }
+
+        #download-button:hover {
+            background-color: #1a7bb9;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            #map {
+                height: 200px;
+            }
+
+            #absen-button,
+            #employee-name,
+            #download-button {
+                font-size: 1em;
+                padding: 12px;
+            }
+
+            .absen-list-container h2 {
+                font-size: 1.3em;
+            }
+
+            #absen-list li {
+                padding: 12px;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -24,10 +249,182 @@
         <div class="absen-list-container">
             <h2>Karyawan Sudah Absen</h2>
             <ul id="absen-list"></ul>
+            <button id="download-button">Unduh Data Absen (.txt)</button>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const timeElement = document.getElementById('time');
+            const dateElement = document.getElementById('date');
+            const absenButton = document.getElementById('absen-button');
+            const statusMessage = document.getElementById('status-message');
+            const employeeNameInput = document.getElementById('employee-name');
+            const absenList = document.getElementById('absen-list');
+            const downloadButton = document.getElementById('download-button');
+            
+            let map;
+            let marker;
+            let employeeLocation = null;
+            let absenData = [];
+
+            // Memuat data dari Local Storage saat halaman dimuat
+            function loadAbsenData() {
+                const storedData = localStorage.getItem('absenData');
+                if (storedData) {
+                    absenData = JSON.parse(storedData);
+                    absenData.forEach(entry => displayAbsen(entry.name, entry.time, entry.date, entry.location));
+                }
+            }
+
+            // Menyimpan data ke Local Storage
+            function saveAbsenData() {
+                localStorage.setItem('absenData', JSON.stringify(absenData));
+            }
+
+            function updateDateTime() {
+                const now = new Date();
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                dateElement.textContent = now.toLocaleDateString('id-ID', options);
+                timeElement.textContent = now.toLocaleTimeString('id-ID');
+            }
+
+            setInterval(updateDateTime, 1000);
+            updateDateTime();
+
+            function initMap(lat, lon) {
+                if (map) {
+                    map.remove();
+                }
+                map = L.map('map').setView([lat, lon], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                marker = L.marker([lat, lon]).addTo(map)
+                    .bindPopup('Lokasi Anda')
+                    .openPopup();
+                
+                employeeLocation = { lat, lon };
+            }
+
+            function getLocation() {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(showPosition, showError);
+                } else {
+                    statusMessage.textContent = "Geolocation tidak didukung oleh browser ini.";
+                    statusMessage.style.color = 'red';
+                    absenButton.disabled = true;
+                }
+            }
+
+            function showPosition(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                statusMessage.textContent = "Lokasi berhasil didapatkan. Anda siap absen.";
+                statusMessage.style.color = 'green';
+                initMap(lat, lon);
+                absenButton.disabled = false;
+            }
+
+            function showError(error) {
+                let message = "Terjadi kesalahan saat mendapatkan lokasi.";
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        message = "Anda menolak permintaan Geolocation. Silakan izinkan lokasi.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        message = "Informasi lokasi tidak tersedia.";
+                        break;
+                    case error.TIMEOUT:
+                        message = "Permintaan Geolocation habis waktu.";
+                        break;
+                    case error.UNKNOWN_ERROR:
+                        message = "Terjadi kesalahan yang tidak diketahui.";
+                        break;
+                }
+                statusMessage.textContent = message;
+                statusMessage.style.color = 'red';
+                absenButton.disabled = true;
+            }
+
+            function displayAbsen(name, time, date, location) {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div>
+                        <strong>${name}</strong>
+                        <br>
+                        <span>${time}, ${date}</span>
+                        <span class="location">Lat: ${location.lat.toFixed(4)}, Lon: ${location.lon.toFixed(4)}</span>
+                    </div>
+                `;
+                absenList.prepend(li);
+            }
+
+            function generateTextData() {
+                let text = "Data Absensi Karyawan\n";
+                text += "======================\n\n";
+                absenData.forEach(data => {
+                    text += `Nama: ${data.name}\n`;
+                    text += `Tanggal: ${data.date}\n`;
+                    text += `Waktu: ${data.time}\n`;
+                    text += `Lokasi: Lat: ${data.location.lat}, Lon: ${data.location.lon}\n`;
+                    text += `----------------------\n`;
+                });
+                return text;
+            }
+
+            absenButton.addEventListener('click', () => {
+                const employeeName = employeeNameInput.value.trim();
+                if (!employeeName) {
+                    statusMessage.textContent = "Silakan masukkan nama Anda.";
+                    statusMessage.style.color = 'red';
+                    return;
+                }
+
+                if (employeeLocation) {
+                    const now = new Date();
+                    const absenEntry = {
+                        name: employeeName,
+                        time: now.toLocaleTimeString('id-ID'),
+                        date: now.toLocaleDateString('id-ID'),
+                        location: employeeLocation
+                    };
+
+                    absenData.unshift(absenEntry); // Tambahkan ke awal array
+                    displayAbsen(absenEntry.name, absenEntry.time, absenEntry.date, absenEntry.location);
+                    saveAbsenData(); // Simpan data terbaru ke Local Storage
+
+                    statusMessage.textContent = `Absensi atas nama ${employeeName} berhasil!`;
+                    statusMessage.style.color = 'blue';
+
+                    employeeNameInput.value = '';
+                } else {
+                    statusMessage.textContent = "Silakan tunggu hingga lokasi Anda ditemukan.";
+                    statusMessage.style.color = 'red';
+                }
+            });
+
+            downloadButton.addEventListener('click', () => {
+                const textToSave = generateTextData();
+                if (textToSave.trim() === "Data Absensi Karyawan\n======================\n\n") {
+                    alert("Tidak ada data absensi untuk diunduh.");
+                    return;
+                }
+                const blob = new Blob([textToSave], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `data_absensi_${new Date().toISOString().slice(0, 10)}.txt`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            // Panggil fungsi ini saat pertama kali halaman dimuat
+            loadAbsenData();
+            getLocation();
+        });
+    </script>
 </body>
 </html>
