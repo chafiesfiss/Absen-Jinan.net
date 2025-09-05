@@ -121,6 +121,19 @@
     </div>
 
     <!-- Firebase SDK -->
+    <!--
+      Masalah "halaman kosong" sering terjadi karena browser memblokir impor skrip dari domain lain
+      (misalnya, gstatic.com) saat file HTML diakses langsung atau di-host di lingkungan tertentu
+      tanpa konfigurasi yang tepat. Ini adalah masalah CORS (Cross-Origin Resource Sharing).
+
+      Untuk mengatasi ini, Anda dapat:
+      1. Gunakan server lokal (mis. `python -m http.server`) untuk menjalankan file.
+      2. Gunakan bundler (mis. Vite, Webpack) untuk menggabungkan semua skrip menjadi satu file.
+      3. Periksa konsol pengembang peramban (F12) untuk melihat pesan kesalahan CORS yang spesifik.
+
+      Di sini, kami menambahkan `try...catch` yang lebih kuat untuk memastikan aplikasi tidak hanya
+      blank, tetapi juga memberikan pesan kesalahan yang jelas kepada pengguna.
+    -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -132,15 +145,10 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         
-        // Cek jika konfigurasi Firebase tersedia. Jika tidak, tampilkan pesan dan jangan lanjutkan.
-        if (typeof __firebase_config === 'undefined' || !__firebase_config) {
-            showMessage('Aplikasi tidak memiliki konfigurasi Firebase yang valid.', 'bg-red-500');
-        }
-
-        // Initialize Firebase
         let app, db, auth;
         let isFirebaseReady = false;
 
+        // Perbaikan: Bungkus inisialisasi dalam try...catch untuk menangani kegagalan.
         try {
             const firebaseConfig = JSON.parse(__firebase_config);
             app = initializeApp(firebaseConfig);
@@ -148,8 +156,6 @@
             auth = getAuth(app);
             isFirebaseReady = true;
 
-            // Perbaikan: Lakukan otentikasi anonim di awal untuk memastikan sesi pengguna selalu ada
-            // sebelum operasi database dilakukan.
             if (initialAuthToken) {
                 signInWithCustomToken(auth, initialAuthToken).catch(e => console.error("Error signing in with custom token:", e));
             } else {
@@ -157,7 +163,7 @@
             }
 
         } catch (e) {
-            showMessage(`Gagal menginisialisasi Firebase. Pastikan konfigurasi sudah benar.`, 'bg-red-500');
+            showMessage(`Gagal menginisialisasi Firebase. Pastikan koneksi internet dan konfigurasi sudah benar.`, 'bg-red-500');
             console.error("Firebase initialization error:", e);
         }
 
