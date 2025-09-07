@@ -4,27 +4,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const absenButton = document.getElementById('absen-button');
     const employeeNameInput = document.getElementById('employee-name');
     const statusMessage = document.getElementById('status-message');
-    const absenList = document.getElementById('absen-list'); // Pastikan element ini ada jika digunakan
     const mapElement = document.getElementById('map');
 
     let map, marker;
-    const officeLocation = [-6.2088, 106.8456]; // Lokasi kantor Jakarta
+    const officeLocation = [-6.2088, 106.8456]; // Contoh lokasi kantor: Jakarta
 
-    // Fungsi untuk menampilkan waktu dan tanggal
+    // Fungsi untuk memperbarui waktu dan tanggal secara real-time
     function updateDateTime() {
         const now = new Date();
         const optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
-
+        
         dateElement.textContent = now.toLocaleDateString('id-ID', optionsDate);
         timeElement.textContent = now.toLocaleTimeString('id-ID', optionsTime);
     }
 
-    // Perbarui waktu setiap detik
+    // Perbarui waktu setiap detik dan jalankan saat halaman dimuat
     setInterval(updateDateTime, 1000);
-    updateDateTime(); // jalankan segera saat halaman load
+    updateDateTime();
 
-    // Fungsi inisialisasi peta
+    // Fungsi untuk menginisialisasi atau memperbarui peta
     function initMap(lat, lon) {
         if (!map) {
             map = L.map(mapElement).setView([lat, lon], 13);
@@ -34,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             map.setView([lat, lon], 13);
         }
-
+        
         if (marker) {
             marker.setLatLng([lat, lon]);
         } else {
@@ -43,22 +42,19 @@ document.addEventListener('DOMContentLoaded', () => {
         marker.bindPopup('Lokasi Anda').openPopup();
     }
 
-    // Mendapatkan lokasi pengguna
+    // Fungsi untuk mendapatkan lokasi pengguna
     function getUserLocation() {
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    initMap(lat, lon);
-                },
-                (error) => {
-                    console.error("Error mendapatkan lokasi: ", error);
-                    statusMessage.textContent = "Gagal mendapatkan lokasi. Memuat lokasi kantor.";
-                    statusMessage.style.color = '#dc3545';
-                    initMap(officeLocation[0], officeLocation[1]);
-                }
-            );
+            navigator.geolocation.getCurrentPosition(position => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                initMap(lat, lon);
+            }, error => {
+                console.error("Error mendapatkan lokasi: ", error);
+                statusMessage.textContent = "Gagal mendapatkan lokasi. Memuat lokasi kantor.";
+                statusMessage.style.color = '#dc3545';
+                initMap(officeLocation[0], officeLocation[1]);
+            });
         } else {
             statusMessage.textContent = "Geolocation tidak didukung oleh browser ini. Memuat lokasi kantor.";
             statusMessage.style.color = '#dc3545';
@@ -66,10 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Panggil fungsi lokasi saat halaman selesai load
+    // Jalankan fungsi untuk mendapatkan lokasi saat halaman dimuat
     getUserLocation();
 
-    // Tombol absen
+    // Fungsi untuk tombol absen
     absenButton.addEventListener('click', async () => {
         const employeeName = employeeNameInput.value.trim();
 
@@ -87,14 +83,45 @@ document.addEventListener('DOMContentLoaded', () => {
             time: new Date().toISOString(),
             location: { latitude: lat, longitude: lon }
         };
-
-        // Sesuaikan info repo dan token
-        const githubUsername = 'chafiesfiss'; // Ganti sesuai username
-        const repoName = 'absen-data'; // Ganti sesuai nama repo
-        const githubPAT = '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'; // Ganti token
+        
+        // --- Bagian yang harus Anda sesuaikan dengan data Anda ---
+        const githubUsername = 'chafiesfiss';
+        const repoName = 'absen-data';
+        const githubPAT = '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';
+        // --- Akhir bagian yang harus disesuaikan ---
 
         const apiUrl = `https://api.github.com/repos/${githubUsername}/${repoName}/actions/workflows/save_data.yml/dispatches`;
 
         try {
             const response = await fetch(apiUrl, {
-                method: '
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Authorization': `token ${githubPAT}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ref: 'main',
+                    inputs: {
+                        data: JSON.stringify(absenData)
+                    }
+                })
+            });
+
+            if (response.ok) {
+                statusMessage.textContent = `Absen berhasil, ${employeeName}! Data dikirim ke GitHub.`;
+                statusMessage.style.color = '#28a745';
+                employeeNameInput.value = "";
+            } else {
+                const error = await response.json();
+                statusMessage.textContent = `Gagal mengirim data. Error: ${error.message}`;
+                statusMessage.style.color = '#dc3545';
+                console.error('GitHub API Error:', error);
+            }
+        } catch (error) {
+            statusMessage.textContent = 'Terjadi kesalahan jaringan saat mengirim data.';
+            statusMessage.style.color = '#dc3545';
+            console.error('Network error:', error);
+        }
+    });
+});
