@@ -24,15 +24,23 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateDateTime, 1000);
     updateDateTime(); // Jalankan pertama kali agar langsung muncul
 
-    // 2. Inisialisasi peta
+    // 2. Inisialisasi peta dan marker
     function initMap(lat, lon) {
-        map = L.map(mapElement).setView([lat, lon], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
-        marker = L.marker([lat, lon]).addTo(map)
-            .bindPopup('Lokasi Anda')
-            .openPopup();
+        if (!map) {
+            map = L.map(mapElement).setView([lat, lon], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+        } else {
+            map.setView([lat, lon], 13);
+        }
+        
+        if (marker) {
+            marker.setLatLng([lat, lon]);
+        } else {
+            marker = L.marker([lat, lon]).addTo(map);
+        }
+        marker.bindPopup('Lokasi Anda').openPopup();
     }
 
     // 3. Mendapatkan lokasi pengguna
@@ -67,25 +75,22 @@ document.addEventListener('DOMContentLoaded', () => {
             statusMessage.style.color = '#dc3545';
             return;
         }
-        
-        // Pastikan marker ada sebelum mengambil koordinat
+
         const lat = marker ? marker.getLatLng().lat : null;
         const lon = marker ? marker.getLatLng().lng : null;
 
-        // Buat objek data yang akan dikirim ke GitHub Actions
         const absenData = {
             name: employeeName,
             time: new Date().toISOString(),
             location: { latitude: lat, longitude: lon }
         };
+        
+        // --- Bagian yang perlu Anda sesuaikan ---
+        const githubUsername = 'chafiesfiss'; // Ganti dengan nama pengguna GitHub Anda
+        const repoName = 'absen-data'; // Ganti dengan nama repositori Anda
+        const githubPAT = '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'; // Ganti dengan token PAT yang valid
+        // --- Akhir bagian yang perlu disesuaikan ---
 
-        // Konfigurasi API GitHub
-        const githubUsername = 'chafiesfiss';
-        const repoName = 'absen-data';
-        
-        // GANTI INI DENGAN TOKEN BARU ANDA
-        const githubPAT = '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';
-        
         const apiUrl = `https://api.github.com/repos/${githubUsername}/${repoName}/actions/workflows/save_data.yml/dispatches`;
 
         try {
