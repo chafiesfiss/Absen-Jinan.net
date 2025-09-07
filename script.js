@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- Bagian yang perlu Anda sesuaikan ---
         const githubUsername = 'chafiesfiss'; // Ganti dengan nama pengguna GitHub Anda
         const repoName = 'absen-data'; // Ganti dengan nama repositori Anda
-        const githubPAT = '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'; // Ganti dengan token PAT yang valid
+        const githubPAT = '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'; // Ganti dengan token PAT yang valid
         // --- Akhir bagian yang perlu disesuaikan ---
 
         const apiUrl = `https://api.github.com/repos/${githubUsername}/${repoName}/actions/workflows/save_data.yml/dispatches`;
@@ -126,3 +126,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
