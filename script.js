@@ -68,20 +68,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        // Pastikan marker ada sebelum mengambil koordinat
+        const lat = marker ? marker.getLatLng().lat : null;
+        const lon = marker ? marker.getLatLng().lng : null;
+
         // Buat objek data yang akan dikirim ke GitHub Actions
         const absenData = {
             name: employeeName,
-            time: new Date().toISOString(), // Menggunakan format ISO untuk waktu
-            location: {
-                latitude: marker ? marker.getLatLng().lat : null,
-                longitude: marker ? marker.getLatLng().lng : null
-            }
+            time: new Date().toISOString(),
+            location: { latitude: lat, longitude: lon }
         };
 
         // Konfigurasi API GitHub
-        const githubUsername = 'chafiesfiss'; // Ganti dengan nama pengguna GitHub Anda
-        const repoName = 'absen-data'; // Ganti dengan nama repositori Anda
-        const githubPAT = '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'; // Token Anda
+        const githubUsername = 'chafiesfiss';
+        const repoName = 'absen-data';
+        
+        // GANTI INI DENGAN TOKEN BARU ANDA
+        const githubPAT = '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';
         
         const apiUrl = `https://api.github.com/repos/${githubUsername}/${repoName}/actions/workflows/save_data.yml/dispatches`;
 
@@ -94,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    ref: 'main', // Pastikan ini adalah nama branch utama Anda (biasanya main atau master)
+                    ref: 'main',
                     inputs: {
                         data: JSON.stringify(absenData)
                     }
@@ -118,4 +121,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
