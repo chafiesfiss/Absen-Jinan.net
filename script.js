@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // Konfigurasi API GitHub
-        const githubUsername = 'NAMA_USER_ANDA'; // Ganti dengan nama pengguna GitHub Anda
+        const githubUsername = 'chafiesfiss'; // Ganti dengan nama pengguna GitHub Anda
         const repoName = 'absen-data'; // Ganti dengan nama repositori Anda
         const githubPAT = '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'; // Token Anda
         
@@ -118,3 +118,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
