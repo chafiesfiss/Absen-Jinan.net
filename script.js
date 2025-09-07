@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- Bagian yang harus Anda sesuaikan dengan data Anda ---
         const githubUsername = 'chafiesfiss';
         const repoName = 'absen-data';
-        const githubPAT = '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';
+        const githubPAT = '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';
         // --- Akhir bagian yang harus disesuaikan ---
 
         const apiUrl = `https://api.github.com/repos/${githubUsername}/${repoName}/actions/workflows/save_data.yml/dispatches`;
