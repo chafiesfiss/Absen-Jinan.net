@@ -3,7 +3,7 @@
 // =================================================================
 // PENTING: Jangan gunakan token ini di aplikasi publik.
 // Solusi ini HANYA untuk demo atau pembelajaran.
-const GITHUB_TOKEN = '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'; 
+const GITHUB_TOKEN = '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'; 
 const REPO_OWNER = 'chafiesfiss';
 const REPO_NAME = 'absen-data';
 const DISPATCH_ENDPOINT = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/dispatches`;
@@ -164,3 +164,4 @@ document.addEventListener('DOMContentLoaded', () => {
         kirimDataAbsen(absenData);
     });
 });
+
