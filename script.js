@@ -1,8 +1,7 @@
 // =================================================================
 // --- BAGIAN KONFIGURASI (SANGAT SENSITIF & TIDAK AMAN DI FRONTEND) ---
 // =================================================================
-// PENTING: Jangan gunakan token ini di aplikasi publik.
-// Solusi ini HANYA untuk demo atau pembelajaran.
+// PENTING: Ganti YOUR_GITHUB_TOKEN dengan token baru Anda. Token harus memiliki izin repo.
 const GITHUB_TOKEN = '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'; 
 const REPO_OWNER = 'chafiesfiss';
 const REPO_NAME = 'absen-data';
@@ -108,7 +107,7 @@ async function kirimDataAbsen(dataAbsen) {
 
         if (response.ok) {
             alert('✅ Absen berhasil dikirim. GitHub Actions akan memproses data Anda.');
-            nameInput.value = ''; // Mengosongkan input nama
+            nameInput.value = '';
         } else {
             const error = await response.json();
             alert(`❌ Gagal mengirim absen. Periksa konsol untuk detail kesalahan. (${response.status})`);
@@ -127,7 +126,6 @@ async function kirimDataAbsen(dataAbsen) {
 // --- EVENT LISTENER & INISIALISASI ---
 // =================================================================
 
-// Menjalankan semua kode setelah DOM (struktur HTML) selesai dimuat
 document.addEventListener('DOMContentLoaded', () => {
     // Mulai jam
     updateClock(); 
@@ -160,8 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        // Memanggil fungsi untuk mengirim data
         kirimDataAbsen(absenData);
     });
 });
-
